@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SmartFlash Pro</title>
+<link rel="shortcut icon" type="imagex/png" href="peso.ico">
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffce00">
+    <style>
+        :root {
+            --primary: #ffce00;
+            --dark: #121212;
+            --card-bg: #1e1e1e;
+            --text: #ffffff;
+            --accent: #2ecc71;
+            --blue: #3498db;
+            --danger: #e74c3c;
+        }
+
+        body { background-color: var(--dark); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; justify-content: center; -webkit-user-select: none; user-select: none; }
+        #app { width: 100%; max-width: 450px; padding: 15px; box-sizing: border-box; padding-bottom: 80px; }
+
+        header { 
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid var(--primary); margin-bottom: 20px; padding: 10px; 
+        }
+        h1 { margin: 0; font-size: 1.5rem; }
+
+        /* Botão de Configuração (Engrenagem) */
+        .btn-config { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+
+        .grid-treinos button {
+            width: 100%; padding: 20px; margin: 10px 0;
+            background: var(--card-bg); color: white;
+            border: 1px solid #333; border-radius: 12px;
+            font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center;
+            transition: transform 0.1s;
+        }
+        .grid-treinos button:active { transform: scale(0.98); }
+
+        .card {
+            background: var(--card-bg); padding: 20px; border-radius: 25px;
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333;
+            position: relative;
+        }
+
+        .card img { width: 100%; border-radius: 15px; margin-bottom: 15px; object-fit: cover; height: 180px; background: #333; }
+
+        /* Histórico e Evolução */
+        .badge-historico {
+            background: #333; padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; color: #aaa;
+            margin-bottom: 10px; display: inline-block;
+        }
+        .evolucao-up { color: var(--accent); }
+        .evolucao-down { color: var(--danger); }
+
+        .tense-display { color: var(--blue); font-size: 0.9rem; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
+        .cronometro { font-size: 3.5rem; color: var(--primary); font-weight: bold; margin: 5px 0; font-family: monospace; }
+        
+        /* Controles do Timer */
+        .timer-controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+        .btn-timer-adj { background: #333; color: white; border: 1px solid #555; border-radius: 20px; padding: 5px 15px; font-size: 0.8rem; }
+
+        .series-checklist { display: flex; justify-content: center; gap: 10px; margin: 15px 0; flex-wrap: wrap; }
+        .serie-dot {
+            width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--primary);
+            display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer;
+        }
+        .serie-dot.concluida { background-color: var(--accent); border-color: var(--accent); color: white; }
+
+        .controles-ex { display: flex; gap: 10px; margin-top: 20px; }
+        .controles-ex button { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
+
+        .btn-descanso { background: var(--primary); color: black; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; border: none; font-size: 1rem; cursor: pointer; }
+        
+        /* Modais */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card-bg); padding: 25px; border-radius: 20px; width: 85%; max-width: 400px; border: 1px solid var(--primary); position: relative; }
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #666; }
+        
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #333; border: 1px solid #444; color: white; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        .hidden { display: none; }
+        
+        /* Botões de Config */
+        .btn-backup { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; text-align: left; padding-left: 20px; }
+        .btn-save { background: var(--blue); color: white; }
+        .btn-load { background: #333; color: white; border: 1px solid #555; }
+        .btn-reset { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <header>
+        <h1>SMART<span style="color:var(--primary)">FLASH</span> PRO</h1>
+        <button class="btn-config" onclick="abrirModalConfig()">⚙️</button>
+    </header>
+
+    <section id="dashboard">
+        <div class="grid-treinos" id="lista-treinos"></div>
+        <button onclick="abrirModalAdd()" style="width:100%; padding:15px; background:transparent; border:2px dashed var(--primary); color:var(--primary); border-radius:12px; font-weight:bold; margin-top:20px;">➕ NOVO EXERCÍCIO</button>
+    </section>
+
+    <section id="treino-ativo" class="hidden">
+        <div class="card">
+            <img id="ex-img" src="" alt="Exercício">
+            
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2 id="ex-nome" style="margin:0; text-align:left; font-size:1.3rem;">Nome</h2>
+                <button onclick="abrirEdicaoRapida()" style="background:none; border:none; color:gray; font-size:1.2rem;">✏️</button>
+            </div>
+            
+            <p id="ex-reps-info" style="color:gray; margin:5px 0; font-size:0.9rem;">Séries x Reps</p>
+            <div id="historico-badge" class="badge-historico">Histórico: --</div>
+
+            <div style="margin: 15px 0; background:#2a2a2a; padding:10px; border-radius:10px; display:flex; justify-content:space-around; align-items:center;">
+                <span style="font-size:0.9rem; color:#aaa;">CARGA (KG):</span>
+                <input type="number" id="ex-peso" style="width:80px; text-align:center; font-size:1.5rem; color:var(--primary); background:none; border:none; border-bottom:1px solid #555;" onchange="salvarPesoAtual()">
+            </div>
+
+            <div class="series-checklist" id="checklist-series"></div>
+
+            <div class="tense-display" id="tense-txt">Série: 00s</div>
+            <div class="cronometro" id="tempo">00:45</div>
+            
+            <div class="timer-controls" id="timer-ctrls" style="visibility: hidden;">
+                <button class="btn-timer-adj" onclick="ajustarTimer(-10)">-10s</button>
+                <button class="btn-timer-adj" onclick="ajustarTimer(10)">+10s</button>
+            </div>
+
+            <button class="btn-descanso" onclick="toggleDescanso()" id="btn-descanso-txt">INICIAR DESCANSO</button>
+            
+            <div class="controles-ex">
+                <button onclick="anterior()" style="background:#333; color:white;">⬅️ ANTERIOR</button>
+                <button onclick="proximo()" style="background:var(--primary); color:black;">PRÓXIMO ➡️</button>
+            </div>
+        </div>
+        <button onclick="voltarDash()" style="width:100%; margin-top:20px; padding:15px; background:transparent; color:gray; border:none; font-size:1rem;">🏠 Voltar ao Início</button>
+    </section>
+</div>
+
+<div id="modalAdd" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="fecharModais()">×</span>
+        <h3>Novo Exercício</h3>
+        <input type="text" id="new-nome" placeholder="Nome do Exercício">
+        <div style="display:flex; gap:10px;">
+            <input type="number" id="new-series" placeholder="Séries" style="flex:1">
+            <input type="text" id="new-reps" placeholder="Reps (ex: 10-12)" style="flex:1">
+        </div>
+        <input type="text" id="new-img" placeholder="Link da Imagem (GIF/JPG)">
+        <select id="new-treino">
+            <option value="1">Treino A</option>
+            <option value="2">Treino B</option>
+            <option value="3">Treino C</option>
+            <option value="4">Treino D</option>
+        </select>
+        <button onclick="salvarNovoEx()" class="btn-descanso" style="background:var(--accent); color:white; margin-top:10px;">SALVAR</button>
+    </div>
+</div>
+
+<div id="modalEdit" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="fecharModais()">×</span>
+        <h3>Editar Atual</h3>
+        <input type="number" id="edit-series" placeholder="Séries">
+        <input type="text" id="edit-reps" placeholder="Reps">
+        <button onclick="salvarEdicao()" class="btn-descanso" style="background:var(--blue); color:white; margin-top:10px;">ATUALIZAR</button>
+        <button onclick="excluirExAtual()" style="width:100%; background:none; color:var(--danger); border:none; margin-top:15px; padding:10px;">🗑️ Excluir Exercício</button>
+    </div>
+</div>
+
+<div id="modalConfig" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="fecharModais()">×</span>
+        <h3>Configurações</h3>
+        <p style="font-size:0.9rem; color:#aaa; margin-bottom:15px;">Segurança dos Dados</p>
+        
+        <button onclick="exportarDados()" class="btn-backup btn-save">💾 Fazer Backup (Download)</button>
+        
+        <div style="position:relative; margin-top:5px;">
+            <button class="btn-backup btn-load">📂 Restaurar Backup</button>
+            <input type="file" onchange="importarDados(this)" style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;">
+        </div>
+
+        <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
+        
+        <button onclick="resetarApp()" class="btn-backup btn-reset">⚠️ Resetar Tudo (Fábrica)</button>
+        <p style="font-size:0.8rem; color:#666; text-align:center; margin-top:10px;">Versão 2.0 Pro</p>
+    </div>
+</div>
+
+<script>
+    // --- LÓGICA PRINCIPAL ---
+    
+    // Migração de dados antigos para novos (se necessário)
+    let treinos = JSON.parse(localStorage.getItem('smartFlash_final')) || { '1': [], '2': [], '3': [], '4': [] };
+    
+    // Função para garantir que todos tenham a estrutura de histórico
+    function normalizarDados() {
+        for(let t in treinos) {
+            treinos[t].forEach(ex => {
+                if(!ex.historico) ex.historico = [];
+                if(!ex.peso) ex.peso = 0;
+            });
+        }
+        salvarNoStorage();
+    }
+    normalizarDados();
+
+    let idxAtual = 0, timerDescanso = null, timerTense = null, segsDescanso = 45, segsTense = 0, idTreinoAtual = '1';
+
+    // Registro do Service Worker (PWA)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('SW registrado!', reg))
+                .catch(err => console.log('SW falhou:', err));
+        });
+    }
+
+    function renderDash() {
+        const container = document.getElementById('lista-treinos');
+        container.innerHTML = '';
+        const labels = { '1': 'Treino A', '2': 'Treino B', '3': 'Treino C', '4': 'Treino D' };
+        
+        ['1','2','3','4'].forEach(num => {
+            let qtd = treinos[num] ? treinos[num].length : 0;
+            container.innerHTML += `
+                <button onclick="iniciarTreino('${num}')">
+                    <div style="text-align:left">
+                        <strong>${labels[num]}</strong><br>
+                        <span style="font-size:0.8rem; color:#aaa">${qtd} exercícios</span>
+                    </div>
+                    <span style="font-size:1.5rem; color:var(--primary)">▶</span>
+                </button>`;
+        });
+    }
+
+    function iniciarTreino(num) {
+        if(treinos[num].length === 0) { alert("Adicione exercícios neste treino primeiro!"); return; }
+        idTreinoAtual = num; idxAtual = 0;
+        document.getElementById('dashboard').classList.add('hidden');
+        document.getElementById('treino-ativo').classList.remove('hidden');
+        carregarCard();
+    }
+
+    function carregarCard() {
+        const ex = treinos[idTreinoAtual][idxAtual];
+        
+        document.getElementById('ex-nome').innerText = ex.nome;
+        document.getElementById('ex-reps-info').innerText = `${ex.series} séries x ${ex.reps}`;
+        document.getElementById('ex-peso').value = ex.peso;
+        document.getElementById('ex-img').src = ex.img || 'https://via.placeholder.com/300x200?text=Sem+Imagem';
+        
+        // Lógica do Histórico
+        const badge = document.getElementById('historico-badge');
+        if (ex.historico && ex.historico.length > 0) {
+            // Pega o penúltimo registro para comparar (o último é o atual se ele já salvou hoje)
+            // Simulação simples: Pega o maior peso já registrado anteriormente
+            let maxPeso = Math.max(...ex.historico.map(h => parseFloat(h.peso)));
+            let diff = parseFloat(ex.peso) - maxPeso;
+            
+            let icon = diff > 0 ? '⬆️' : (diff < 0 ? '⬇️' : '➖');
+            let classe = diff > 0 ? 'evolucao-up' : (diff < 0 ? 'evolucao-down' : '');
+            
+            badge.innerHTML = `Recorde: ${maxPeso}kg <span class="${classe}">${icon}</span>`;
+        } else {
+            badge.innerText = "Primeiro treino deste exercício";
+        }
+
+        const checkContainer = document.getElementById('checklist-series');
+        checkContainer.innerHTML = '';
+        for(let i = 1; i <= ex.series; i++) {
+            checkContainer.innerHTML += `<div class="serie-dot" onclick="concluirSerie(this)">${i}</div>`;
+        }
+        
+        pararTodosTimers();
+        resetDisplayTimers();
+        iniciarTense();
+        document.getElementById('timer-ctrls').style.visibility = 'hidden';
+    }
+
+    // --- TIMERS ---
+    function iniciarTense() {
+        clearInterval(timerTense);
+        segsTense = 0;
+        document.getElementById('tense-txt').innerText = `Série: 00s`;
+        timerTense = setInterval(() => {
+            segsTense++;
+            let min = Math.floor(segsTense / 60);
+            let s = segsTense % 60;
+            document.getElementById('tense-txt').innerText = `Série: ${min < 10 ? '0'+min : min}:${s < 10 ? '0'+s : s}`;
+        }, 1000);
+    }
+
+    function concluirSerie(el) {
+        if(!el.classList.contains('concluida')) {
+            el.classList.add('concluida');
+            clearInterval(timerTense);
+            bip(100);
+            // Salvar histórico ao concluir uma série
+            salvarHistorico();
+            toggleDescanso(); // Inicia descanso automático
+        }
+    }
+
+    function toggleDescanso() {
+        if(timerDescanso) {
+            pararDescanso();
+            iniciarTense();
+        } else {
+            clearInterval(timerTense);
+            segsDescanso = 45; // Reset padrão
+            atualizarDisplayTimer();
+            document.getElementById('timer-ctrls').style.visibility = 'visible';
+            
+            timerDescanso = setInterval(() => {
+                segsDescanso--;
+                atualizarDisplayTimer();
+                if(segsDescanso <= 0) {
+                    bip(800);
+                    pararDescanso();
+                    alert("BORA! Fim do descanso.");
+                    iniciarTense();
+                }
+            }, 1000);
+            document.getElementById('btn-descanso-txt').innerText = "PARAR DESCANSO";
+            document.getElementById('btn-descanso-txt').style.background = "#e74c3c"; // Vermelho
+            document.getElementById('btn-descanso-txt').style.color = "white";
+        }
+    }
+
+    function ajustarTimer(val) {
+        segsDescanso += val;
+        if(segsDescanso < 0) segsDescanso = 0;
+        atualizarDisplayTimer();
+    }
+
+    function atualizarDisplayTimer() {
+        let m = Math.floor(segsDescanso / 60);
+        let s = segsDescanso % 60;
+        document.getElementById('tempo').innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+    }
+
+    function pararDescanso() {
+        clearInterval(timerDescanso);
+        timerDescanso = null;
+        document.getElementById('tempo').innerText = "00:45";
+        document.getElementById('btn-descanso-txt').innerText = "INICIAR DESCANSO";
+        document.getElementById('btn-descanso-txt').style.background = "var(--primary)";
+        document.getElementById('btn-descanso-txt').style.color = "black";
+        document.getElementById('timer-ctrls').style.visibility = 'hidden';
+    }
+
+    function pararTodosTimers() { clearInterval(timerDescanso); timerDescanso = null; clearInterval(timerTense); }
+    function resetDisplayTimers() { document.getElementById('tempo').innerText = "00:45"; }
+
+    function bip(ms) {
+        if(navigator.vibrate) navigator.vibrate(ms);
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        osc.connect(ctx.destination);
+        osc.frequency.value = 600;
+        osc.start(); osc.stop(ctx.currentTime + (ms/1000));
+    }
+
+    // --- CRUD E DADOS ---
+    function salvarPesoAtual() {
+        let p = document.getElementById('ex-peso').value;
+        treinos[idTreinoAtual][idxAtual].peso = p;
+        salvarNoStorage();
+    }
+
+    function salvarHistorico() {
+        let ex = treinos[idTreinoAtual][idxAtual];
+        let hoje = new Date().toLocaleDateString();
+        
+        // Verifica se já tem registro de hoje, se tiver atualiza, se não cria
+        let ultimoReg = ex.historico.length > 0 ? ex.historico[ex.historico.length - 1] : null;
+        
+        if (ultimoReg && ultimoReg.data === hoje) {
+            ultimoReg.peso = ex.peso;
+        } else {
+            ex.historico.push({ data: hoje, peso: ex.peso });
+        }
+        salvarNoStorage();
+    }
+
+    function salvarNoStorage() {
+        localStorage.setItem('smartFlash_final', JSON.stringify(treinos));
+    }
+
+    // --- BACKUP ---
+    function exportarDados() {
+        const dados = localStorage.getItem('smartFlash_final');
+        const blob = new Blob([dados], {type: "application/json"});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `SmartFlash_Backup_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
+    function importarDados(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const json = JSON.parse(e.target.result);
+                if (json['1']) { 
+                    localStorage.setItem('smartFlash_final', JSON.stringify(json));
+                    alert("Dados restaurados! Recarregando...");
+                    location.reload();
+                } else { alert("Arquivo inválido!"); }
+            } catch (erro) { alert("Erro ao ler arquivo."); }
+        };
+        reader.readAsText(file);
+    }
+
+    // --- NAVEGAÇÃO E MODAIS ---
+    function proximo() { if(idxAtual < treinos[idTreinoAtual].length - 1) { idxAtual++; carregarCard(); } }
+    function anterior() { if(idxAtual > 0) { idxAtual--; carregarCard(); } }
+    function voltarDash() { pararTodosTimers(); document.getElementById('dashboard').classList.remove('hidden'); document.getElementById('treino-ativo').classList.add('hidden'); renderDash(); }
+    
+    function abrirModalAdd() { document.getElementById('modalAdd').style.display = 'flex'; }
+    function abrirModalConfig() { document.getElementById('modalConfig').style.display = 'flex'; }
+    function abrirEdicaoRapida() { 
+        document.getElementById('modalEdit').style.display = 'flex'; 
+        let ex = treinos[idTreinoAtual][idxAtual];
+        document.getElementById('edit-series').value = ex.series;
+        document.getElementById('edit-reps').value = ex.reps;
+    }
+    function fecharModais() { 
+        document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); 
+    }
+
+    function salvarNovoEx() {
+        const n = document.getElementById('new-nome').value, s = document.getElementById('new-series').value, r = document.getElementById('new-reps').value, i = document.getElementById('new-img').value, t = document.getElementById('new-treino').value;
+        if(n && s) { 
+            treinos[t].push({ nome: n, series: parseInt(s), reps: r, img: i, peso: 0, historico: [] }); 
+            salvarNoStorage(); renderDash(); fecharModais(); 
+            // Limpa campos
+            document.getElementById('new-nome').value = '';
+            document.getElementById('new-img').value = '';
+        }
+    }
+
+    function salvarEdicao() {
+        let s = document.getElementById('edit-series').value;
+        let r = document.getElementById('edit-reps').value;
+        treinos[idTreinoAtual][idxAtual].series = parseInt(s);
+        treinos[idTreinoAtual][idxAtual].reps = r;
+        salvarNoStorage();
+        carregarCard(); // Recarrega visual
+        fecharModais();
+    }
+
+    function excluirExAtual() {
+        if(confirm("Tem certeza que quer excluir este exercício?")) {
+            treinos[idTreinoAtual].splice(idxAtual, 1);
+            salvarNoStorage();
+            fecharModais();
+            voltarDash();
+        }
+    }
+
+    function resetarApp() { 
+        if(confirm("ISSO APAGARÁ TUDO! Tem certeza?")) { 
+            localStorage.clear(); location.reload(); 
+        } 
+    }
+
+    renderDash();
+</script>
+</body>
+</html>
