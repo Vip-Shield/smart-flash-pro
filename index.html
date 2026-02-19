@@ -4,89 +4,126 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SmartFlash Pro</title>
-<link rel="shortcut icon" type="imagex/png" href="peso.ico">
-
+    <link rel="shortcut icon" type="imagex/png" href="peso.ico">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ffce00">
     <style>
         :root {
             --primary: #ffce00;
-            --dark: #121212;
-            --card-bg: #1e1e1e;
+            --dark: transparent; /* Alterado para transparente para mostrar o fundo */
+            --card-bg: rgba(30, 30, 30, 0.75); /* Fundo translúcido (Glassmorphism) */
             --text: #ffffff;
             --accent: #2ecc71;
             --blue: #3498db;
             --danger: #e74c3c;
         }
 
-        body { background-color: var(--dark); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; justify-content: center; -webkit-user-select: none; user-select: none; }
+        /* IMAGEM DE FUNDO DESFOCADA E DARK */
+        body::before {
+            content: "";
+            position: fixed;
+            top: -20px; left: -20px; right: -20px; bottom: -20px; /* Margem negativa evita bordas no desfoque */
+            background-image: url('./img/bg-academia.jpg'); /* Nome da imagem salva na sua pasta */
+            background-size: cover;
+            background-position: center;
+            filter: blur(8px) brightness(0.35); /* Desfoque e escurecimento da imagem */
+            z-index: -1;
+        }
+
+        body { 
+            background-color: var(--dark); 
+            color: var(--text); 
+            font-family: 'Segoe UI', sans-serif; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            -webkit-user-select: none; 
+            user-select: none; 
+            min-height: 100vh;
+        }
+        
         #app { width: 100%; max-width: 450px; padding: 15px; box-sizing: border-box; padding-bottom: 80px; }
 
         header { 
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 2px solid var(--primary); margin-bottom: 20px; padding: 10px; 
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
         }
-        h1 { margin: 0; font-size: 1.5rem; }
+        h1 { margin: 0; font-size: 1.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
 
         /* Botão de Configuração (Engrenagem) */
-        .btn-config { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+        .btn-config { background: none; border: none; font-size: 1.5rem; cursor: pointer; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
 
         .grid-treinos button {
             width: 100%; padding: 20px; margin: 10px 0;
             background: var(--card-bg); color: white;
-            border: 1px solid #333; border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
             font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center;
-            transition: transform 0.1s;
+            transition: transform 0.1s, background 0.2s;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
-        .grid-treinos button:active { transform: scale(0.98); }
+        .grid-treinos button:active { transform: scale(0.98); background: rgba(50, 50, 50, 0.9); }
 
         .card {
             background: var(--card-bg); padding: 20px; border-radius: 25px;
-            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333;
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            border: 1px solid rgba(255, 255, 255, 0.1);
             position: relative;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
 
-        .card img { width: 100%; border-radius: 15px; margin-bottom: 15px; object-fit: cover; height: 180px; background: #333; }
+        .card img { width: 100%; border-radius: 15px; margin-bottom: 15px; object-fit: cover; height: 180px; background: rgba(0,0,0,0.5); }
 
         /* Histórico e Evolução */
         .badge-historico {
-            background: #333; padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; color: #aaa;
-            margin-bottom: 10px; display: inline-block;
+            background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; color: #ccc;
+            margin-bottom: 10px; display: inline-block; border: 1px solid rgba(255,255,255,0.1);
         }
         .evolucao-up { color: var(--accent); }
         .evolucao-down { color: var(--danger); }
 
-        .tense-display { color: var(--blue); font-size: 0.9rem; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
-        .cronometro { font-size: 3.5rem; color: var(--primary); font-weight: bold; margin: 5px 0; font-family: monospace; }
+        .tense-display { color: var(--blue); font-size: 0.9rem; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        .cronometro { font-size: 3.5rem; color: var(--primary); font-weight: bold; margin: 5px 0; font-family: monospace; text-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
         
         /* Controles do Timer */
         .timer-controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
-        .btn-timer-adj { background: #333; color: white; border: 1px solid #555; border-radius: 20px; padding: 5px 15px; font-size: 0.8rem; }
+        .btn-timer-adj { background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 5px 15px; font-size: 0.8rem; cursor: pointer; }
 
         .series-checklist { display: flex; justify-content: center; gap: 10px; margin: 15px 0; flex-wrap: wrap; }
         .serie-dot {
             width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--primary);
             display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer;
+            background: rgba(0,0,0,0.3); text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            transition: 0.2s;
         }
-        .serie-dot.concluida { background-color: var(--accent); border-color: var(--accent); color: white; }
+        .serie-dot.concluida { background-color: var(--accent); border-color: var(--accent); color: white; box-shadow: 0 0 10px var(--accent); }
 
         .controles-ex { display: flex; gap: 10px; margin-top: 20px; }
-        .controles-ex button { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
+        .controles-ex button { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .controles-ex button:active { transform: scale(0.95); }
 
-        .btn-descanso { background: var(--primary); color: black; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; border: none; font-size: 1rem; cursor: pointer; }
+        .btn-descanso { background: var(--primary); color: black; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; border: none; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s; }
+        .btn-descanso:active { transform: scale(0.98); }
         
         /* Modais */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: var(--card-bg); padding: 25px; border-radius: 20px; width: 85%; max-width: 400px; border: 1px solid var(--primary); position: relative; }
-        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #666; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card-bg); padding: 25px; border-radius: 20px; width: 85%; max-width: 400px; border: 1px solid var(--primary); position: relative; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #aaa; }
         
-        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #333; border: 1px solid #444; color: white; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        input::placeholder { color: #aaa; }
         .hidden { display: none; }
         
         /* Botões de Config */
-        .btn-backup { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; text-align: left; padding-left: 20px; }
+        .btn-backup { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; text-align: left; padding-left: 20px; transition: 0.2s; }
+        .btn-backup:active { transform: scale(0.98); }
         .btn-save { background: var(--blue); color: white; }
-        .btn-load { background: #333; color: white; border: 1px solid #555; }
+        .btn-load { background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.2); }
         .btn-reset { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
 
     </style>
@@ -101,7 +138,7 @@
 
     <section id="dashboard">
         <div class="grid-treinos" id="lista-treinos"></div>
-        <button onclick="abrirModalAdd()" style="width:100%; padding:15px; background:transparent; border:2px dashed var(--primary); color:var(--primary); border-radius:12px; font-weight:bold; margin-top:20px;">➕ NOVO EXERCÍCIO</button>
+        <button onclick="abrirModalAdd()" style="width:100%; padding:15px; background:rgba(0,0,0,0.3); border:2px dashed var(--primary); color:var(--primary); border-radius:12px; font-weight:bold; margin-top:20px; backdrop-filter: blur(5px); cursor: pointer; transition: 0.2s;">➕ NOVO EXERCÍCIO</button>
     </section>
 
     <section id="treino-ativo" class="hidden">
@@ -110,15 +147,15 @@
             
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h2 id="ex-nome" style="margin:0; text-align:left; font-size:1.3rem;">Nome</h2>
-                <button onclick="abrirEdicaoRapida()" style="background:none; border:none; color:gray; font-size:1.2rem;">✏️</button>
+                <button onclick="abrirEdicaoRapida()" style="background:none; border:none; color:#ccc; font-size:1.2rem; cursor: pointer;">✏️</button>
             </div>
             
-            <p id="ex-reps-info" style="color:gray; margin:5px 0; font-size:0.9rem;">Séries x Reps</p>
+            <p id="ex-reps-info" style="color:#bbb; margin:5px 0; font-size:0.9rem;">Séries x Reps</p>
             <div id="historico-badge" class="badge-historico">Histórico: --</div>
 
-            <div style="margin: 15px 0; background:#2a2a2a; padding:10px; border-radius:10px; display:flex; justify-content:space-around; align-items:center;">
-                <span style="font-size:0.9rem; color:#aaa;">CARGA (KG):</span>
-                <input type="number" id="ex-peso" style="width:80px; text-align:center; font-size:1.5rem; color:var(--primary); background:none; border:none; border-bottom:1px solid #555;" onchange="salvarPesoAtual()">
+            <div style="margin: 15px 0; background:rgba(0,0,0,0.4); padding:10px; border-radius:10px; display:flex; justify-content:space-around; align-items:center; border: 1px solid rgba(255,255,255,0.05);">
+                <span style="font-size:0.9rem; color:#ccc;">CARGA (KG):</span>
+                <input type="number" id="ex-peso" style="width:80px; text-align:center; font-size:1.5rem; color:var(--primary); background:none; border:none; border-bottom:1px solid #555; padding: 5px; margin: 0;" onchange="salvarPesoAtual()">
             </div>
 
             <div class="series-checklist" id="checklist-series"></div>
@@ -134,11 +171,11 @@
             <button class="btn-descanso" onclick="toggleDescanso()" id="btn-descanso-txt">INICIAR DESCANSO</button>
             
             <div class="controles-ex">
-                <button onclick="anterior()" style="background:#333; color:white;">⬅️ ANTERIOR</button>
+                <button onclick="anterior()" style="background:rgba(0,0,0,0.6); color:white; border: 1px solid rgba(255,255,255,0.1);">⬅️ ANTERIOR</button>
                 <button onclick="proximo()" style="background:var(--primary); color:black;">PRÓXIMO ➡️</button>
             </div>
         </div>
-        <button onclick="voltarDash()" style="width:100%; margin-top:20px; padding:15px; background:transparent; color:gray; border:none; font-size:1rem;">🏠 Voltar ao Início</button>
+        <button onclick="voltarDash()" style="width:100%; margin-top:20px; padding:15px; background:rgba(0,0,0,0.5); color:#ddd; border:1px solid rgba(255,255,255,0.1); border-radius: 12px; font-size:1rem; cursor: pointer; backdrop-filter: blur(5px);">🏠 Voltar ao Início</button>
     </section>
 </div>
 
@@ -169,7 +206,7 @@
         <input type="number" id="edit-series" placeholder="Séries">
         <input type="text" id="edit-reps" placeholder="Reps">
         <button onclick="salvarEdicao()" class="btn-descanso" style="background:var(--blue); color:white; margin-top:10px;">ATUALIZAR</button>
-        <button onclick="excluirExAtual()" style="width:100%; background:none; color:var(--danger); border:none; margin-top:15px; padding:10px;">🗑️ Excluir Exercício</button>
+        <button onclick="excluirExAtual()" style="width:100%; background:rgba(231, 76, 60, 0.1); color:var(--danger); border:1px solid rgba(231, 76, 60, 0.3); border-radius: 8px; margin-top:15px; padding:10px; cursor: pointer;">🗑️ Excluir Exercício</button>
     </div>
 </div>
 
@@ -186,10 +223,10 @@
             <input type="file" onchange="importarDados(this)" style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;">
         </div>
 
-        <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
+        <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:20px 0;">
         
         <button onclick="resetarApp()" class="btn-backup btn-reset">⚠️ Resetar Tudo (Fábrica)</button>
-        <p style="font-size:0.8rem; color:#666; text-align:center; margin-top:10px;">Versão 2.0 Pro</p>
+        <p style="font-size:0.8rem; color:#888; text-align:center; margin-top:10px;">Versão 2.0 Pro</p>
     </div>
 </div>
 
